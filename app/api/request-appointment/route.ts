@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const TO_EMAIL = 's.green@care4group.nl';
+const TO_EMAIL = 'stucelgreen@gmail.com';
 
 function escapeHtml(value: unknown) {
   return String(value ?? '')
