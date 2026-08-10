@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+function normalizeSupabaseUrl(value?: string) {
+  if (!value) return null;
+  let url = value.trim();
+  url = url.replace(/\/+$/, '');
+  url = url.replace(/\/rest\/v1$/i, '');
+  return url;
+}
+
 function supabase() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = normalizeSupabaseUrl(process.env.SUPABASE_URL);
+  const key = (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
   if (!url || !key) return null;
 
   return createClient(url, key, {
@@ -17,7 +25,7 @@ function supabase() {
 
 export async function GET() {
   const client = supabase();
-  if (!client) return NextResponse.json({ blocked: [] });
+  if (!client) return NextResponse.json({ blocked: [], error: 'Supabase is nog niet ingesteld.' }, { status: 500 });
 
   const { data, error } = await client
     .from('blocked_availability')
@@ -25,8 +33,8 @@ export async function GET() {
     .order('date');
 
   if (error) {
-    console.error('Supabase GET availability error:', error.message);
-    return NextResponse.json({ blocked: [], error: error.message }, { status: 500 });
+    console.error('Supabase GET availability error:', error);
+    return NextResponse.json({ blocked: [], error: error.message, code: error.code }, { status: 500 });
   }
 
   return NextResponse.json({ blocked: data || [] });
@@ -63,8 +71,8 @@ export async function POST(request: NextRequest) {
     .insert({ date, period });
 
   if (error) {
-    console.error('Supabase POST availability error:', error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Supabase POST availability error:', error);
+    return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
@@ -89,8 +97,8 @@ export async function DELETE(request: NextRequest) {
     .eq('period', period);
 
   if (error) {
-    console.error('Supabase DELETE availability error:', error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Supabase DELETE availability error:', error);
+    return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
