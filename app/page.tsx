@@ -52,14 +52,35 @@ export default function Home() {
   }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault(); setSending(true); setError('');
+    e.preventDefault();
+    setSending(true);
+    setError('');
     const data = new FormData(e.currentTarget);
-    const payload = { firstName:data.get('firstName'), lastName:data.get('lastName'), email:data.get('email'), phone:data.get('phone'), education:data.get('education'), notes:data.get('notes'), preferences };
+    const payload = {
+      firstName:data.get('firstName'),
+      lastName:data.get('lastName'),
+      email:data.get('email'),
+      phone:data.get('phone'),
+      education:data.get('education'),
+      notes:data.get('notes'),
+      preferences,
+    };
+
     try {
-      const response = await fetch('/api/request-appointment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      if(!response.ok) throw new Error(); setSent(true); window.scrollTo({top:0,behavior:'smooth'});
-    } catch { setError('Het afspraakverzoek kon niet worden verzonden. Probeer het opnieuw of neem rechtstreeks contact op.'); }
-    finally { setSending(false); }
+      const response = await fetch('/api/request-appointment', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Verzenden mislukt (${response.status})`);
+      setSent(true);
+      window.scrollTo({top:0,behavior:'smooth'});
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Het afspraakverzoek kon niet worden verzonden.');
+    } finally {
+      setSending(false);
+    }
   }
 
   if(sent) return <main className="shell success"><div className="successIcon"><CheckCircle2 size={34}/></div><p className="eyebrow">Verzoek succesvol verstuurd</p><h1>Bedankt! Ik neem je voorkeuren door.</h1><p className="lead">Je afspraak is nog niet definitief. Ik bekijk je voorkeursmomenten en neem contact met je op om samen het definitieve tijdstip vast te leggen.</p><button className="secondary" onClick={()=>setSent(false)}>Nog een verzoek indienen</button></main>;
